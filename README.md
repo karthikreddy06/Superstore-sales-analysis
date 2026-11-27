@@ -25,9 +25,9 @@ The Superstore generated **$2,297,200.86** in sales across 2014–2017, but net 
 ## Approach
 
 1. **Data Ingestion & Cleaning (`Python` + `pandas` + `PostgreSQL`):** Parsed `M/D/YYYY` dates, normalized column names, enforced numeric types, and loaded all 9,994 rows into PostgreSQL (`sql/01_schema.sql`, `python/load_data.py`).
-2. **SQL Analysis (`PostgreSQL`):** Wrote 9 business-question queries (`sql/02_analysis.sql`) using CTEs, `CASE` banding, `PERCENTILE_CONT`, and window functions (`LAG` for MoM sales growth, `SUM() OVER` for running profit, `RANK`/`DENSE_RANK` for within-category ranking).
-3. **Automated Verification (`Python` + `pandas`):** Built `python/verify.py` to recompute 18 key metrics directly from the raw CSV and fail if any PostgreSQL result differs.
-4. **BI-Ready Exports:** Exported all 9 query outputs to `dashboard/data/` as clearly named CSVs, documented in [docs/powerbi_guide.md](docs/powerbi_guide.md).
+2. **SQL Analysis (`PostgreSQL`):** Wrote 10 business-question queries (`sql/02_analysis.sql`) using CTEs, `CASE` banding, `PERCENTILE_CONT`, and window functions (`LAG` for MoM sales growth, `SUM() OVER` for running profit, `RANK`/`DENSE_RANK` for within-category ranking).
+3. **Automated Verification (`Python` + `pandas`):** Built `python/verify.py` to recompute 31 key metrics directly from the raw CSV and fail if any PostgreSQL result differs.
+4. **BI-Ready Exports:** Exported all 10 query outputs to `dashboard/data/` as clearly named CSVs, documented in [docs/powerbi_guide.md](docs/powerbi_guide.md).
 
 ---
 
@@ -38,14 +38,14 @@ The Superstore generated **$2,297,200.86** in sales across 2014–2017, but net 
 │   └── Sample - Superstore.csv             # Raw dataset (9,994 rows)
 ├── sql/
 │   ├── 01_schema.sql                       # PostgreSQL table schema and indexes
-│   └── 02_analysis.sql                     # 9 documented analysis queries
+│   └── 02_analysis.sql                     # 10 documented analysis queries
 ├── python/
 │   ├── db_config.py                        # Loads .env credentials for PostgreSQL
 │   ├── load_data.py                        # Cleans CSV and loads PostgreSQL
 │   ├── run_queries.py                      # Runs SQL queries and exports CSVs
 │   └── verify.py                           # Cross-checks PostgreSQL vs pandas
 ├── dashboard/
-│   └── data/                               # 9 exported CSVs for Power BI
+│   └── data/                               # 10 exported CSVs for Power BI
 ├── docs/
 │   ├── data_dictionary.md                  # Column definitions and cleaning steps
 │   └── powerbi_guide.md                    # Click-by-click Power BI build guide
@@ -99,11 +99,12 @@ python python/verify.py
 - **Source:** `sql/02_analysis.sql` (Queries 2 & 8) -> `dashboard/data/category_subcategory_profit.csv`, `dashboard/data/loss_subcategory_root_cause.csv`
 - **Recommendation:** Restrict discounts above 20% on Tables and Bookcases; for Supplies, review supplier unit costs and SKU pricing rather than discount policy.
 
-### 4. Profit Per Customer Varies 8.2x Across Segments and Regions
-- **Numbers:** **Home Office in the East** delivers **$215.40** profit per customer (`20.95%` margin; $26,709.22 across 124 customers), whereas **Consumer in Central** delivers just **$26.11** profit per customer (`3.40%` margin; $8,564.05 across 328 customers).
-- **Note on Customer Overlap:** Per-region customer counts overlap because **766 of 793 customers (96.60%)** placed orders in more than one region, so these figures measure regional profit per active customer in that region. When each customer is assigned to a single primary region (by order count, then sales) with their full lifetime profit, the numbers change meaningfully: **Home Office East** is **$420.01** (42 customers) and **Consumer Central** is **$305.10** (80 customers), while **Corporate Central** leads at **$633.91** (46 customers) and **Home Office South** is lowest at **$186.97** (15 customers).
-- **Source:** `sql/02_analysis.sql` (Query 7) -> `dashboard/data/segment_region_profit.csv`
-- **Recommendation:** Prioritize retention and account management for East Home Office and West Corporate/Consumer ($168.81 and $160.48 profit/customer), while tightening discount guardrails on Central Consumer orders.
+### 4. Home Office Leads Profit Per Customer (\$407.42), While Central Region Lags at 7.92% Margin
+- **By Segment:** **Home Office** (148 customers) generates **$60,298.68** in profit (**$407.42** per customer, `14.03%` margin); **Corporate** (236 customers) generates **$91,979.13** (**$389.74** per customer, `13.03%` margin); and **Consumer** (409 customers) generates **$134,119.21** (**$327.92** per customer, `11.55%` margin).
+- **By Region (order-based):** **West** leads with **$108,418.45** profit on **$725,457.82** sales (`14.94%` margin), followed by **East** (**$91,522.78** on **$678,781.24**, `13.48%`) and **South** (**$46,749.43** on **$391,721.91**, `11.93%`). **Central** generates **$501,239.89** in sales (28% more than South) but only **$39,706.36** in profit (`7.92%` margin).
+- *Limitations note: Customers span regions (766 of 793 order across multiple regions), so customer-level figures are reported by Segment, not by Region.*
+- **Source:** `sql/02_analysis.sql` (Queries 7 & 8) -> `dashboard/data/segment_profit.csv`, `dashboard/data/region_performance.csv`
+- **Recommendation:** Prioritize retention and account management for **Home Office** and **Corporate** customers (highest profit per customer and margin), and focus regional margin-recovery efforts on **Central** (`7.92%` margin) by tightening discount guardrails.
 
 ---
 
@@ -121,7 +122,7 @@ Power BI dashboard built from the CSVs in `dashboard/data/`:
 1. **Enforce a 20% Discount Ceiling:** Eliminating or gating `> 20%` discounts protects the profitable core (+$421,773.08) from the -$135,376.06 drag.
 2. **Fix Regional Margin Leakage First in TX, OH, PA, IL:** Align regional rep compensation with margin rather than top-line sales.
 3. **Separate Pricing Fixes from Discount Fixes:** Apply discount caps to Tables and Bookcases, and run a supplier/SKU cost review on Supplies.
-4. **Prioritize Retention & Account Management in High-Yield Segments:** Focus retention and account-management efforts on East Home Office and West Corporate/Consumer, while tightening discount guardrails on Central Consumer orders.
+4. **Prioritize Home Office & Corporate Retention and Central Margin Recovery:** Focus account-management and retention efforts on Home Office (\$407.42/customer) and Corporate (\$389.74/customer), while tightening discount guardrails in the Central region (`7.92%` margin).
 
 ---
 

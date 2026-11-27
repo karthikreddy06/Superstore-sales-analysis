@@ -147,14 +147,13 @@ GROUP BY ship_mode
 ORDER BY avg_days_to_ship;
 
 -- ============================================================
--- 7. PROFIT PER CUSTOMER BY SEGMENT AND REGION
--- Output: segment_region_profit.csv
--- Business Question: How does profit per customer and profit margin vary across customer segments and regions?
--- Why this query: Replaces the uninformative repeat-vs-one-time split (781 vs 12) with an actionable view of customer value by Segment and Region.
+-- 7. PROFIT PER CUSTOMER BY SEGMENT
+-- Output: segment_profit.csv
+-- Business Question: How do customer count, profit per customer, and margin compare across customer segments?
+-- Why this query: Each of the 793 customers belongs to exactly one segment, making Segment a clean, non-overlapping basis for profit per customer.
 -- ============================================================
 SELECT
     segment,
-    region,
     COUNT(DISTINCT customer_id) AS customer_count,
     COUNT(DISTINCT order_id) AS order_count,
     SUM(sales) AS total_sales,
@@ -162,11 +161,27 @@ SELECT
     SUM(profit) / NULLIF(COUNT(DISTINCT customer_id), 0) AS profit_per_customer,
     SUM(profit) / NULLIF(SUM(sales), 0) * 100 AS profit_margin_pct
 FROM superstore
-GROUP BY segment, region
+GROUP BY segment
 ORDER BY profit_per_customer DESC;
 
 -- ============================================================
--- 8. ROOT-CAUSE ANALYSIS: LOSS-MAKING SUB-CATEGORIES VS DISCOUNTING
+-- 8. SALES, PROFIT, AND MARGIN BY REGION (ORDER-BASED)
+-- Output: region_performance.csv
+-- Business Question: How do regions compare in order volume, sales, profit, and margin?
+-- Why this query: Evaluates regional profitability on an order basis without customer counts, since 766 of 793 customers order across multiple regions.
+-- ============================================================
+SELECT
+    region,
+    COUNT(DISTINCT order_id) AS order_count,
+    SUM(sales) AS total_sales,
+    SUM(profit) AS total_profit,
+    SUM(profit) / NULLIF(SUM(sales), 0) * 100 AS profit_margin_pct
+FROM superstore
+GROUP BY region
+ORDER BY total_profit DESC;
+
+-- ============================================================
+-- 9. ROOT-CAUSE ANALYSIS: LOSS-MAKING SUB-CATEGORIES VS DISCOUNTING
 -- Output: loss_subcategory_root_cause.csv
 -- Business Question: Do loss-making sub-categories (Tables, Bookcases, Supplies) have higher discounts, and are they profitable at <= 20% discount?
 -- Why this query: Tests whether heavy discounting (>20%) drives losses in Tables, Bookcases, and Supplies or whether other cost factors are at play.
@@ -196,7 +211,7 @@ GROUP BY sub_category_group
 ORDER BY total_profit ASC;
 
 -- ============================================================
--- 9. ROOT-CAUSE ANALYSIS: TOP 4 LOSS STATES VS DISCOUNTING
+-- 10. ROOT-CAUSE ANALYSIS: TOP 4 LOSS STATES VS DISCOUNTING
 -- Output: loss_state_root_cause.csv
 -- Business Question: Do the top 4 loss-making states (TX, OH, PA, IL) suffer from heavier discounting than the remaining 45 states?
 -- Why this query: Quantifies average discount, share of >20% discounted lines, and profit above vs up to 20% discount for TX, OH, PA, and IL.

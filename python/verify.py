@@ -96,21 +96,34 @@ def main():
             checks.append(("Top 4 loss states profit", top4_pd, top4_pg, TOLERANCE))
             checks.append(("All 10 loss states profit", all10_pd, all10_pg, TOLERANCE))
 
-            # 5. Segment-Region highest & lowest profit per customer
-            sr_pd = df.groupby(["Segment", "Region"]).agg(
+            # 5. Segment profit per customer (each customer has one segment) & Region order-based totals
+            cur.execute(
+                "SELECT COUNT(*) FROM ("
+                "  SELECT customer_id FROM superstore GROUP BY customer_id HAVING COUNT(DISTINCT segment) > 1"
+                ") t;"
+            )
+            multi_seg_pg = cur.fetchone()[0]
+            multi_seg_pd = int((df.groupby("Customer ID")["Segment"].nunique() > 1).sum())
+            checks.append(("Customers with >1 segment", multi_seg_pd, multi_seg_pg, 0))
+
+            seg_pd = df.groupby("Segment").agg(
                 profit=("Profit", "sum"),
                 customers=("Customer ID", "nunique"),
             )
-            sr_pd["ppc"] = sr_pd["profit"] / sr_pd["customers"]
+            seg_pd["ppc"] = seg_pd["profit"] / seg_pd["customers"]
             cur.execute(
-                "SELECT segment, region, SUM(profit) / COUNT(DISTINCT customer_id) AS ppc "
-                "FROM superstore GROUP BY segment, region ORDER BY ppc DESC;"
+                "SELECT segment, SUM(profit), SUM(profit) / COUNT(DISTINCT customer_id) "
+                "FROM superstore GROUP BY segment;"
             )
-            sr_pg = cur.fetchall()
-            top_seg, top_reg, top_ppc_pg = sr_pg[0]
-            bot_seg, bot_reg, bot_ppc_pg = sr_pg[-1]
-            checks.append((f"Top PPC ({top_seg}-{top_reg})", sr_pd.loc[(top_seg, top_reg), "ppc"], top_ppc_pg, TOLERANCE))
-            checks.append((f"Bottom PPC ({bot_seg}-{bot_reg})", sr_pd.loc[(bot_seg, bot_reg), "ppc"], bot_ppc_pg, TOLERANCE))
+            for seg_name, seg_prof_pg, seg_ppc_pg in cur.fetchall():
+                checks.append((f"Segment {seg_name} profit", seg_pd.loc[seg_name, "profit"], seg_prof_pg, TOLERANCE))
+                checks.append((f"Segment {seg_name} PPC", seg_pd.loc[seg_name, "ppc"], seg_ppc_pg, TOLERANCE))
+
+            reg_pd = df.groupby("Region").agg(sales=("Sales", "sum"), profit=("Profit", "sum"))
+            cur.execute("SELECT region, SUM(sales), SUM(profit) FROM superstore GROUP BY region;")
+            for reg_name, reg_sales_pg, reg_prof_pg in cur.fetchall():
+                checks.append((f"Region {reg_name} sales", reg_pd.loc[reg_name, "sales"], reg_sales_pg, TOLERANCE))
+                checks.append((f"Region {reg_name} profit", reg_pd.loc[reg_name, "profit"], reg_prof_pg, TOLERANCE))
 
         for label, pd_v, pg_v, tol in checks:
             if not assert_close(label, pd_v, pg_v, tol):

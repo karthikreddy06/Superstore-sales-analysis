@@ -9,7 +9,8 @@ Follow these steps to build a one-page executive dashboard in Power BI Desktop u
    - `category_subcategory_profit.csv`
    - `discount_band_profit.csv`
    - `state_performance.csv`
-   - `segment_region_profit.csv`
+   - `segment_profit.csv`
+   - `region_performance.csv`
 3. In **Transform Data** (Power Query Editor):
    - In `monthly_trend`, confirm `month` is typed as **Date**.
    - Add a `Year` column from `month`: **Add Column** -> **Date** -> **Year** -> **Year**.
@@ -18,8 +19,8 @@ Follow these steps to build a one-page executive dashboard in Power BI Desktop u
 
 ## 2. Configure Relationships & Measures
 1. Go to **Model view**:
-   - Link `state_performance[region]` to `segment_region_profit[region]` (Many-to-Many or via a small `Region` bridge table) so the Region slicer filters both state and segment visuals.
-   - *Tip:* Because each exported CSV is pre-aggregated at its own grain, the **Year** slicer filters `monthly_trend`, while **Region** and **Segment** slicers filter `state_performance` and `segment_region_profit`. If you want all three slicers to cross-filter every visual simultaneously, also import `data/Sample - Superstore.csv` as a detail table.
+   - Link `state_performance[region]` to `region_performance[region]` (Many-to-One) so the Region slicer filters both state and region visuals.
+   - *Tip:* Because each exported CSV is pre-aggregated at its own grain, the **Year** slicer filters `monthly_trend`, **Region** filters `state_performance` and `region_performance`, and **Segment** filters `segment_profit`. If you want all three slicers to cross-filter every visual simultaneously, also import `data/Sample - Superstore.csv` as a detail table.
 2. Create a Profit Margin measure in **Report view** (**Modeling** -> **New Measure**):
    ```dax
    Profit Margin % = DIVIDE(SUM(monthly_trend[total_profit]), SUM(monthly_trend[total_sales]), 0)
@@ -35,8 +36,8 @@ Set the canvas to **16:9** (**Format page** -> **Canvas settings**).
 
 ### Row 1 (Right): Slicers
 1. **Year Slicer:** Add **Slicer** -> drag `monthly_trend[Year]` -> **Slicer settings** -> **Dropdown** or **Tile**.
-2. **Region Slicer:** Add **Slicer** -> drag `segment_region_profit[region]`.
-3. **Segment Slicer:** Add **Slicer** -> drag `segment_region_profit[segment]`.
+2. **Region Slicer:** Add **Slicer** -> drag `region_performance[region]`.
+3. **Segment Slicer:** Add **Slicer** -> drag `segment_profit[segment]`.
 
 ### Row 2: Trends & Sub-Categories
 1. **Monthly Sales & Profit Trend (Line Chart):**
