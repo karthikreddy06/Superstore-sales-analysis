@@ -12,7 +12,6 @@ env/
 
 # Data files
 data/*.csv
-dashboard/data/*.csv
 
 # OS / IDE
 .DS_Store

@@ -1,0 +1,11 @@
+customer_id,customer_name,segment,region,total_sales,total_profit,profit_margin_pct,order_count
+TC-20980,Tamara Chand,Corporate,Central,18437.138,8745.0635,47.4317841521824,2
+RB-19360,Raymond Buch,Consumer,West,14345.276,6807.0879,47.45177367099804,2
+AB-10105,Adrian Barton,Consumer,Central,12181.594,5362.6135,44.02226424554947,5
+HL-15040,Hunter Lopez,Consumer,East,10522.55,5045.8564,47.952790910948394,2
+SC-20095,Sanjit Chand,Consumer,Central,9900.19,4668.6935,47.15761515688083,1
+TA-21385,Tom Ashbrook,Home Office,East,13723.498,4599.2073,33.51337465127331,2
+CM-12385,Christopher Martinez,Consumer,South,6682.26,3197.458,47.84994896936067,2
+DR-12940,Daniel Raglin,Home Office,East,6937.87,3050.3344,43.966439267383215,2
+SE-20110,Sanjit Engle,Consumer,South,8805.04,2825.2862,32.08714781534212,1
+AR-10540,Andy Reiter,Consumer,Central,5802.7,2602.0939,44.842812828510866,1
